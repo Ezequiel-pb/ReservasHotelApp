@@ -13,7 +13,7 @@ namespace ReservasHotelApp
 
         public async Task<bool> VerificarYReservarAsync(Reserva nuevaReserva)
         {
-            await Task.Delay(10000); // Simula consulta a servidor 
+            await Task.Delay(5000); // Simula consulta a servidor 
 
             lock (locker)
             {

@@ -17,6 +17,14 @@ namespace ReservasHotelApp
 
         }
 
+        public void LimpiarCampos()
+        {
+            txtCliente.Clear();
+            cmbTipoHabitacion.SelectedIndex = -1;
+            dtpEntrada.Value = DateTime.Now;
+            dtpSalida.Value = DateTime.Now.AddDays(1);
+        }
+
         private async void btnReservar_Click(object sender, EventArgs e)
         {
             string cliente = txtCliente.Text.Trim();
@@ -38,7 +46,8 @@ namespace ReservasHotelApp
                 FechaSalida = salida
             };
 
-            btnReservar.Enabled = false;
+           //btnReservar.Enabled = false;  para bloquear el boton 
+           LimpiarCampos();
             bool reservada = await gestor.VerificarYReservarAsync(nuevaReserva);
             btnReservar.Enabled = true;
 
