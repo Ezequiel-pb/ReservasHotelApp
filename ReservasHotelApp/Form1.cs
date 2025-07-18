@@ -15,7 +15,8 @@ namespace ReservasHotelApp
         private void Form1_Load(object sender, EventArgs e)
         {
 
-        }
+        // Evento que se ejecuta al cargar el formulario (actualmente vacío)
+        private void Form1_Load(object sender, EventArgs e){}
 
         public void LimpiarCampos()
         {
