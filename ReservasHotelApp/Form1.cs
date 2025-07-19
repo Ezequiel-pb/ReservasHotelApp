@@ -2,12 +2,13 @@ using System;
 
 namespace ReservasHotelApp
 {
+
     // Clase principal del formulario de la aplicación de reservas de hotel
     public partial class Form1 : Form
     {
         // Instancia del gestor de reservas que maneja la lógica de negocio
-        GestorReservas gestor = new GestorReservas();
-       
+        private GestorReservas gestor = new GestorReservas();
+
         // Constructor del formulario
         public Form1()
         {
@@ -15,19 +16,31 @@ namespace ReservasHotelApp
 
             // Se agregan las opciones de tipo de habitación al ComboBox al iniciar el formulario
             cmbTipoHabitacion.Items.AddRange(new string[] { "Estándar", "Doble", "Suite" });
+            cmbTipoHabitacion.DropDownStyle = ComboBoxStyle.DropDownList;
+
+            // Configuración inicial de fechas
+            dtpEntrada.Value = DateTime.Now;
+            dtpSalida.Value = DateTime.Now.AddDays(1);
+
+            // Configuración inicial de la barra de progreso
+            progressBarReserva.Visible = false;
+            progressBarReserva.Style = ProgressBarStyle.Marquee;
+            progressBarReserva.MarqueeAnimationSpeed = 30;
         }
 
-        // Evento que se ejecuta al cargar el formulario (actualmente vacío)
-        private void Form1_Load(object sender, EventArgs e){}
+        // Evento que se ejecuta al cargar el formulario
+        private void Form1_Load(object sender, EventArgs e) { }
 
+        // Método para limpiar los campos de entrada
         public void LimpiarCampos()
         {
             txtCliente.Clear();
-            cmbTipoHabitacion.SelectedIndex = -1; // Deselecciona cualquier opción
+            cmbTipoHabitacion.SelectedIndex = 0;
             dtpEntrada.Value = DateTime.Now;
-            dtpSalida.Value = DateTime.Now.AddDays(1);  // Fecha de salida por defecto es mañana
+            dtpSalida.Value = DateTime.Now.AddDays(1);
         }
 
+        // Botón para realizar una reserva
         private async void btnReservar_Click(object sender, EventArgs e)
         {
             // Validación de campos antes de proceder con la reserva
@@ -42,7 +55,7 @@ namespace ReservasHotelApp
                 return;
             }
 
-            // Creación de una nueva reserva con los datos ingresados
+
             Reserva nuevaReserva = new Reserva
             {
                 Cliente = cliente,
@@ -51,25 +64,15 @@ namespace ReservasHotelApp
                 FechaSalida = salida
             };
 
-            // Verifica disponibilidad y realiza la reserva de manera asíncrona
-            LimpiarCampos();
+            //Mostrar barra de progreso mientras se procesa
+             progressBarReserva.Visible = true;
+            //btnReservar.Enabled = false;
+
             bool reservada = await gestor.VerificarYReservarAsync(nuevaReserva);
-            btnReservar.Enabled = true;
-            progressBarReserva.Value = 0;
-            progressBarReserva.Visible = true;
-            btnReservar.Enabled = false;
 
-            // Simulamos un progreso gradual
-            for (int i = 0; i <= 100; i += 20)
-            {
-                progressBarReserva.Value = i;
-                await Task.Delay(300);  // Espera 300 ms por cada incremento
-            }
-
-            bool reserva = await gestor.VerificarYReservarAsync(nuevaReserva);
-
+            // Ocultar barra y reactivar botón
             progressBarReserva.Visible = false;
-            btnReservar.Enabled = true;
+           // btnReservar.Enabled = true;
 
             if (reservada)
             {
@@ -83,11 +86,7 @@ namespace ReservasHotelApp
             }
         }
 
-        private void lbl_FechaDeSalida_Click(object sender, EventArgs e)
-        {
-            // Este evento está definido pero no tiene funcionalidad implementada
-        }
-
+        // Botón para eliminar una reserva
         private void btn_eliminar_Click(object sender, EventArgs e)
         {
             // Verifica si hay una reserva seleccionada
@@ -110,7 +109,7 @@ namespace ReservasHotelApp
             if (eliminado)
             {
                 MessageBox.Show("Reserva eliminada correctamente.");
-                lstReservas.Items.Remove(reservaSeleccionada);
+                RefrescarListaReservas();
             }
             else
             {
@@ -118,6 +117,7 @@ namespace ReservasHotelApp
             }
         }
 
+        // Botón para editar una reserva
         private void btn_editar_Click(object sender, EventArgs e)
         {
             // Verifica si hay una reserva seleccionada para editar
@@ -127,81 +127,48 @@ namespace ReservasHotelApp
                 return;
             }
 
+            // Validar campos
             string nuevoCliente = txtCliente.Text.Trim();
             string nuevoTipo = cmbTipoHabitacion.SelectedItem?.ToString();
+            DateTime entrada = dtpEntrada.Value.Date;
+            DateTime salida = dtpSalida.Value.Date;
 
-            if (string.IsNullOrWhiteSpace(nuevoCliente) || string.IsNullOrWhiteSpace(nuevoTipo))
+            if (string.IsNullOrWhiteSpace(nuevoCliente) || nuevoTipo == null || entrada >= salida)
             {
-                MessageBox.Show("Nombre del cliente o tipo de habitación no puede estar vacío.");
+                MessageBox.Show("Datos inválidos para editar la reserva.");
                 return;
             }
-            // Actualiza la información de la reserva seleccionada
-            reservaSeleccionada.Cliente = nuevoCliente;
-            reservaSeleccionada.TipoHabitacion = nuevoTipo;
 
-            MessageBox.Show("Reserva actualizada correctamente.");
+            // Crear objeto con datos actualizados
+            Reserva datosActualizados = new Reserva
+            {
+                Cliente = nuevoCliente,
+                TipoHabitacion = nuevoTipo,
+                FechaEntrada = entrada,
+                FechaSalida = salida
+            };
 
-            RefrescarListaReservas();
+            // Intentar actualizar
+            bool actualizado = gestor.ActualizarReserva(reservaSeleccionada, datosActualizados);
+            if (actualizado)
+            {
+                MessageBox.Show("Reserva actualizada correctamente.");
+                RefrescarListaReservas();
+            }
+            else
+            {
+                MessageBox.Show("Las nuevas fechas chocan con otra reserva.");
+            }
         }
+
+        // Refresca la lista de reservas en el ListBox
         private void RefrescarListaReservas()
         {
-            // Limpia la lista de reservas y vuelve a cargarla desde el gestor
             lstReservas.Items.Clear();
             foreach (var reserva in gestor.ObtenerReservas())
             {
                 lstReservas.Items.Add(reserva);
             }
-        }
-
-        private async void progressBarReserva_Click(object sender, EventArgs e)
-        {
-            string cliente = txtCliente.Text.Trim();
-            string tipo = cmbTipoHabitacion.SelectedItem?.ToString();
-            DateTime entrada = dtpEntrada.Value.Date;
-            DateTime salida = dtpSalida.Value.Date;
-
-            if (string.IsNullOrWhiteSpace(cliente) || tipo == null || entrada >= salida)
-            {
-                MessageBox.Show("Datos inválidos. Verifica la información.");
-                return;
-            }
-
-            Reserva nuevaReserva = new Reserva
-            {
-                Cliente = cliente,
-                TipoHabitacion = tipo,
-                FechaEntrada = entrada,
-                FechaSalida = salida
-            };
-
-            // Activamos la barra y desactivamos el botón
-            progressBarReserva.Visible = true;
-            btnReservar.Enabled = false;
-
-            // Simular tiempo de proceso (aquí podría ser tu llamada real asíncrona)
-            await Task.Delay(3000);  // Simulamos 3 segundos
-
-            bool reservada = await gestor.VerificarYReservarAsync(nuevaReserva);
-
-            // Ocultamos la barra y activamos el botón
-            progressBarReserva.Visible = false;
-            btnReservar.Enabled = true;
-
-            if (reservada)
-            {
-                MessageBox.Show("¡Reserva confirmada!");
-                LimpiarCampos();
-                RefrescarListaReservas();
-            }
-            else
-            {
-                MessageBox.Show("No hay disponibilidad para esa habitación en esas fechas.");
-            }
-
-            // Configuración final de la barra de progreso en modo indeterminado (marquee)
-            this.progressBarReserva = new System.Windows.Forms.ProgressBar();
-            this.progressBarReserva.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.progressBarReserva.Visible = false;
         }
     }
 }

@@ -45,7 +45,7 @@ namespace ReservasHotelApp
             }
         }
 
-        internal bool EliminarReserva(Reserva reservaSeleccionada)
+        public bool EliminarReserva(Reserva reservaSeleccionada)
         {
             lock (locker)
             {
@@ -56,6 +56,40 @@ namespace ReservasHotelApp
                 }
                 return false;
             }
+        }
+
+        public bool ActualizarReserva(Reserva original, Reserva datosActualizados)
+        {
+            lock (locker) // Bloqueo para garantizar seguridad en concurrencia
+            {
+                // Verifica si los nuevos datos chocan con otra reserva (ignorando la original)
+                if (HayChoque(datosActualizados, original))
+                    return false;
+
+                // Si no hay choque, actualiza los datos de la reserva original
+                original.Cliente = datosActualizados.Cliente;
+                original.TipoHabitacion = datosActualizados.TipoHabitacion;
+                original.FechaEntrada = datosActualizados.FechaEntrada;
+                original.FechaSalida = datosActualizados.FechaSalida;
+                return true;
+            }
+        }
+
+        private bool HayChoque(Reserva nueva, Reserva? ignorar)
+        {
+            foreach (var r in reservas)
+            {
+                // Ignora la misma reserva cuando se está editando
+                if (ignorar != null && ReferenceEquals(r, ignorar)) continue;
+
+                // Verifica si el tipo de habitación es igual y las fechas se cruzan
+                if (r.TipoHabitacion == nueva.TipoHabitacion &&
+                    !(nueva.FechaSalida <= r.FechaEntrada || nueva.FechaEntrada >= r.FechaSalida))
+                {
+                    return true; // Hay choque
+                }
+            }
+            return false; // No hay conflicto
         }
     }
 }

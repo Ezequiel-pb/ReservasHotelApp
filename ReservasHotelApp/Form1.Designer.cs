@@ -82,7 +82,6 @@
             lbl_FechaDeSalida.Size = new Size(117, 20);
             lbl_FechaDeSalida.TabIndex = 3;
             lbl_FechaDeSalida.Text = "Fecha de salida";
-            lbl_FechaDeSalida.Click += lbl_FechaDeSalida_Click;
             // 
             // lbl_ReservasHotel
             // 
@@ -197,13 +196,7 @@
             // 
             // progressBarReserva
             // 
-            progressBarReserva.ForeColor = Color.Lime;
-            progressBarReserva.Location = new Point(756, 357);
-            progressBarReserva.Name = "progressBarReserva";
-            progressBarReserva.Size = new Size(125, 29);
-            progressBarReserva.TabIndex = 14;
-            progressBarReserva.Visible = false;
-            progressBarReserva.Click += progressBarReserva_Click;
+          
             // 
             // Form1
             // 
